@@ -1,5 +1,4 @@
 flask>=0.9
-pyjwt[crypto]>=2,<3
-requests
+propelauth-py
 pytest
 requests-mock

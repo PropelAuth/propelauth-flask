@@ -1,14 +1,15 @@
+# PropelAuth Flask SDK
+
 <p align="center">
-  <a href="https://www.propelauth.com?ref=github" target="_blank" align="center">
+  <a href="https://www.propelauth.com/?utm_campaign=github-flask" target="_blank" align="center">
     <img src="https://propelauth-logos.s3.us-west-2.amazonaws.com/logo-only.png" width="100">
   </a>
 </p>
 
-# PropelAuth React Library
 
-A React library for managing authentication in the browser, backed by [PropelAuth](https://www.propelauth.com?ref=github). 
+A Flask library for managing authentication, backed by [PropelAuth](https://www.propelauth.com/?utm_campaign=github-flask).
 
-[PropelAuth](https://www.propelauth.com?ref=github) is a prebuilt, hosted authentication solution focused on a great developer experience. 
+[PropelAuth](https://www.propelauth.com/?utm_campaign=github-flask) is a prebuilt, hosted authentication solution focused on a great developer experience.
 
 ## Documentation
 

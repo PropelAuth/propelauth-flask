@@ -25,7 +25,7 @@ def test_require_org_member_with_auth_but_no_org_membership(app, auth, client, r
     user_id = random_user_id()
     access_token = create_access_token({"user_id": user_id}, rsa_keys.private_pem)
     response = client.get(route_for(org_id), headers={"Authorization": "Bearer " + access_token})
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 
 def test_require_org_member_with_auth_and_org_member(app, auth, client, rsa_keys):
