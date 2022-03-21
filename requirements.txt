@@ -1,4 +1,4 @@
 flask>=0.9
-propelauth-py
+propelauth-py>=3.0.0b0
 pytest
 requests-mock
