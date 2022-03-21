@@ -1,4 +1,4 @@
-from propelauth_py.user import User, UserRole
+from propelauth_py.user import User
 
 
 class LoggedInUser:
