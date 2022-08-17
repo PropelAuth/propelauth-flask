@@ -6,7 +6,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="propelauth-flask",
-    version="1.1.2",
+    version="1.1.3",
     description="A library for managing authentication in Flask",
     long_description=README,
     long_description_content_type="text/markdown",
