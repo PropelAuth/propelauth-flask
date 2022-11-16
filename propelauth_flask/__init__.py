@@ -4,7 +4,9 @@ from flask import _request_ctx_stack
 from propelauth_py import TokenVerificationMetadata, init_base_auth
 from werkzeug.local import LocalProxy
 
-from propelauth_flask.auth_decorator import _get_user_credential_decorator, _get_require_org_decorator
+from propelauth_flask.auth_decorator import _get_user_credential_decorator, _get_require_org_decorator, \
+    _require_org_member_with_minimum_role_decorator, _require_org_member_with_exact_role_decorator, \
+    _require_org_member_with_permission_decorator, _require_org_member_with_all_permissions_decorator
 
 '''Returns the current user. Must be used with one of require_user, optional_user, or require_org_member'''
 current_user = LocalProxy(lambda: getattr(_request_ctx_stack.top, "propelauth_current_user", None))
@@ -13,7 +15,13 @@ current_user = LocalProxy(lambda: getattr(_request_ctx_stack.top, "propelauth_cu
 current_org = LocalProxy(lambda: getattr(_request_ctx_stack.top, "propelauth_current_org", None))
 
 Auth = namedtuple("Auth", [
-    "require_user", "optional_user", "require_org_member",
+    "require_user", "optional_user",
+    "require_org_member",
+    "require_org_member_with_minimum_role",
+    "require_org_member_with_exact_role",
+    "require_org_member_with_permission",
+    "require_org_member_with_all_permissions",
+
     "fetch_user_metadata_by_user_id", "fetch_user_metadata_by_email", "fetch_user_metadata_by_username",
     "fetch_batch_user_metadata_by_user_ids",
     "fetch_batch_user_metadata_by_emails",
@@ -37,6 +45,15 @@ def init_auth(auth_url: str, api_key: str, token_verification_metadata: TokenVer
         require_user=_get_user_credential_decorator(auth.validate_access_token_and_get_user, True, debug_mode),
         optional_user=_get_user_credential_decorator(auth.validate_access_token_and_get_user, False, debug_mode),
         require_org_member=_get_require_org_decorator(auth.validate_access_token_and_get_user_with_org, debug_mode),
+        require_org_member_with_minimum_role=_require_org_member_with_minimum_role_decorator(
+            auth.validate_access_token_and_get_user_with_org_by_minimum_role, debug_mode),
+        require_org_member_with_exact_role=_require_org_member_with_exact_role_decorator(
+            auth.validate_access_token_and_get_user_with_org_by_exact_role, debug_mode),
+        require_org_member_with_permission=_require_org_member_with_permission_decorator(
+            auth.validate_access_token_and_get_user_with_org_by_permission, debug_mode),
+        require_org_member_with_all_permissions=_require_org_member_with_all_permissions_decorator(
+            auth.validate_access_token_and_get_user_with_org_by_all_permissions, debug_mode),
+
         fetch_user_metadata_by_user_id=auth.fetch_user_metadata_by_user_id,
         fetch_user_metadata_by_email=auth.fetch_user_metadata_by_email,
         fetch_user_metadata_by_username=auth.fetch_user_metadata_by_username,
