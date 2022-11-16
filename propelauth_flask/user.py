@@ -1,17 +1,19 @@
-from propelauth_py.user import User, UserRole
+from propelauth_py.user import User
 
 
 class LoggedInUser:
     def __init__(self, user: User):
         self.user_id = user.user_id
         self.org_id_to_org_member_info = user.org_id_to_org_member_info
+        self.legacy_user_id = user.legacy_user_id
 
     def exists(self):
         return True
 
     def __eq__(self, other):
         if isinstance(other, LoggedInUser):
-            return self.user_id == other.user_id and self.org_id_to_org_member_info == other.org_id_to_org_member_info
+            return self.user_id == other.user_id and self.org_id_to_org_member_info == other.org_id_to_org_member_info \
+                   and self.legacy_user_id == other.legacy_user_id
         return False
 
 
