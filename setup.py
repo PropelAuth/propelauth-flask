@@ -4,6 +4,10 @@ import pathlib
 HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
 
+# See https://pytest-runner.readthedocs.io/en/latest/#conditional-requirement
+needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
+pytest_runner = ['pytest-runner'] if needs_pytest else []
+
 setup(
     name="propelauth-flask",
     version="2.0.1",
@@ -16,7 +20,7 @@ setup(
     author_email="support@propelauth.com",
     license="MIT",
     install_requires=["flask>=0.9", "propelauth-py", "requests"],
-    setup_requires=["pytest-runner"],
+    setup_requires=pytest_runner,
     tests_require=["pytest==4.4.1"],
     test_suite="tests",
 )
