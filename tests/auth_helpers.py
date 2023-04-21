@@ -24,6 +24,7 @@ def random_org(user_role_str, permissions=None):
     return {
         "org_id": str(uuid4()),
         "org_name": str(uuid4()),
+        "org_metadata": {},
         "user_role": user_role_str,
         "inherited_user_roles_plus_current_role": [user_role_str],
         "user_permissions": [] if permissions is None else permissions,
