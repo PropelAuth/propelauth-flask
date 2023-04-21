@@ -22,7 +22,7 @@ def test_require_org_member_with_auth_but_no_org_membership(app, auth, client, r
     org_id = str(uuid4())
 
     user_id = random_user_id()
-    access_token = create_access_token({"user_id": user_id}, rsa_keys.private_pem)
+    access_token = create_access_token({"user_id": user_id, "email": "easteregg@propelauth.com"}, rsa_keys.private_pem)
     response = client.get(route_for(org_id), headers={"Authorization": "Bearer " + access_token})
     assert response.status_code == 403
 
@@ -36,6 +36,7 @@ def test_require_org_member_with_auth_and_org_member_min_role(app, auth, client,
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -53,6 +54,7 @@ def test_require_org_member_with_auth_and_org_member(app, auth, client, rsa_keys
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -71,6 +73,7 @@ def test_require_org_member_with_auth_but_wrong_org_id(app, auth, client, rsa_ke
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -91,6 +94,7 @@ def test_require_org_member_with_auth_but_no_permission(app, auth, client, rsa_k
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -114,6 +118,7 @@ def test_require_org_member_with_auth_with_permission(app, auth, client, rsa_key
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -131,6 +136,7 @@ def test_require_org_member_with_auth_by_permission(app, auth, client, rsa_keys)
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -148,6 +154,7 @@ def test_require_org_member_with_auth_by_permission_missing(app, auth, client, r
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -164,6 +171,7 @@ def test_require_org_member_with_auth_by_permissions(app, auth, client, rsa_keys
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -181,6 +189,7 @@ def test_require_org_member_with_auth_by_permissions_missing(app, auth, client, 
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -197,6 +206,7 @@ def test_require_org_member_with_bad_header(app, auth, client, rsa_keys):
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem)
 
@@ -221,6 +231,7 @@ def test_require_org_member_with_expired_token(app, auth, client, rsa_keys):
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem, expires_in=timedelta(minutes=-1))
 
@@ -237,6 +248,7 @@ def test_require_user_with_bad_issuer(app, auth, client, rsa_keys):
 
     access_token = create_access_token({
         "user_id": user_id,
+        "email": "easteregg@propelauth.com",
         "org_id_to_org_member_info": org_id_to_org_member_info
     }, rsa_keys.private_pem, issuer=HTTP_BASE_AUTH_URL)
 
