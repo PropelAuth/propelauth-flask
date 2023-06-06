@@ -34,8 +34,19 @@ Auth = namedtuple("Auth", [
     "create_magic_link", "create_access_token",
     "migrate_user_from_external_source", "create_org", "add_user_to_org",
     "update_org_metadata",
-    "delete_user", "disable_user", "enable_user",
-    "allow_org_to_setup_saml_connection", "disallow_org_to_setup_saml_connection"
+    "delete_user", "disable_user", "enable_user", "disable_user_2fa",
+    "enable_user_can_create_orgs", "disable_user_can_create_orgs",
+    "allow_org_to_setup_saml_connection", "disallow_org_to_setup_saml_connection",
+
+    "fetch_api_key",
+    "fetch_current_api_keys",
+    "fetch_archived_api_keys",
+    "create_api_key",
+    "update_api_key",
+    "delete_api_key",
+    "validate_api_key",
+    "validate_personal_api_key",
+    "validate_org_api_key",
 ])
 
 
