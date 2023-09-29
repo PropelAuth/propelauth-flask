@@ -11,7 +11,7 @@ pytest_runner = ["pytest-runner"] if needs_pytest else []
 
 setup(
     name="propelauth-flask",
-    version="2.1.4",
+    version="2.1.5",
     description="A library for managing authentication in Flask",
     long_description=README,
     long_description_content_type="text/markdown",
