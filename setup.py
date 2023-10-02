@@ -20,7 +20,7 @@ setup(
     author="PropelAuth",
     author_email="support@propelauth.com",
     license="MIT",
-    install_requires=["flask>=0.9", "propelauth-py==3.1.7", "requests"],
+    install_requires=["flask<3", "propelauth-py==3.1.7", "requests"],
     setup_requires=pytest_runner,
     tests_require=["pytest==4.4.1"],
     test_suite="tests",
