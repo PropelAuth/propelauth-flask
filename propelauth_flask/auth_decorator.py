@@ -7,7 +7,9 @@ from propelauth_py.errors import ForbiddenException
 from propelauth_flask.user import LoggedOutUser, LoggedInUser
 
 
-def _get_user_credential_decorator(validate_access_token_and_get_user, require_user, debug_mode):
+def _get_user_credential_decorator(
+    validate_access_token_and_get_user, require_user, debug_mode
+):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -36,10 +38,14 @@ def _get_require_org_decorator(validate_access_token_and_get_user_with_org, debu
                 try:
                     authorization_header = request.headers.get("Authorization")
                     required_org_id = req_to_org_id(request)
-                    user_and_org = validate_access_token_and_get_user_with_org(authorization_header, required_org_id)
+                    user_and_org = validate_access_token_and_get_user_with_org(
+                        authorization_header, required_org_id
+                    )
 
                     _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = user_and_org.org_member_info
+                    _request_ctx_stack.top.propelauth_current_org = (
+                        user_and_org.org_member_info
+                    )
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
@@ -56,20 +62,28 @@ def _get_require_org_decorator(validate_access_token_and_get_user_with_org, debu
     return decorator_that_takes_arguments
 
 
-def _require_org_member_with_minimum_role_decorator(validate_access_token_and_get_user_with_org_by_minimum_role,
-                                                    debug_mode):
-    def decorator_that_takes_arguments(minimum_required_role, req_to_org_id=_default_req_to_org_id):
+def _require_org_member_with_minimum_role_decorator(
+    validate_access_token_and_get_user_with_org_by_minimum_role, debug_mode
+):
+    def decorator_that_takes_arguments(
+        minimum_required_role, req_to_org_id=_default_req_to_org_id
+    ):
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 try:
                     authorization_header = request.headers.get("Authorization")
                     required_org_id = req_to_org_id(request)
-                    user_and_org = validate_access_token_and_get_user_with_org_by_minimum_role(
-                        authorization_header, required_org_id, minimum_required_role)
+                    user_and_org = (
+                        validate_access_token_and_get_user_with_org_by_minimum_role(
+                            authorization_header, required_org_id, minimum_required_role
+                        )
+                    )
 
                     _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = user_and_org.org_member_info
+                    _request_ctx_stack.top.propelauth_current_org = (
+                        user_and_org.org_member_info
+                    )
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
@@ -86,8 +100,9 @@ def _require_org_member_with_minimum_role_decorator(validate_access_token_and_ge
     return decorator_that_takes_arguments
 
 
-def _require_org_member_with_exact_role_decorator(validate_access_token_and_get_user_with_org_by_exact_role,
-                                                  debug_mode):
+def _require_org_member_with_exact_role_decorator(
+    validate_access_token_and_get_user_with_org_by_exact_role, debug_mode
+):
     def decorator_that_takes_arguments(role, req_to_org_id=_default_req_to_org_id):
         def decorator(func):
             @functools.wraps(func)
@@ -95,11 +110,16 @@ def _require_org_member_with_exact_role_decorator(validate_access_token_and_get_
                 try:
                     authorization_header = request.headers.get("Authorization")
                     required_org_id = req_to_org_id(request)
-                    user_and_org = validate_access_token_and_get_user_with_org_by_exact_role(
-                        authorization_header, required_org_id, role)
+                    user_and_org = (
+                        validate_access_token_and_get_user_with_org_by_exact_role(
+                            authorization_header, required_org_id, role
+                        )
+                    )
 
                     _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = user_and_org.org_member_info
+                    _request_ctx_stack.top.propelauth_current_org = (
+                        user_and_org.org_member_info
+                    )
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
@@ -116,20 +136,28 @@ def _require_org_member_with_exact_role_decorator(validate_access_token_and_get_
     return decorator_that_takes_arguments
 
 
-def _require_org_member_with_permission_decorator(validate_access_token_and_get_user_with_org_by_permission,
-                                                  debug_mode):
-    def decorator_that_takes_arguments(permission, req_to_org_id=_default_req_to_org_id):
+def _require_org_member_with_permission_decorator(
+    validate_access_token_and_get_user_with_org_by_permission, debug_mode
+):
+    def decorator_that_takes_arguments(
+        permission, req_to_org_id=_default_req_to_org_id
+    ):
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 try:
                     authorization_header = request.headers.get("Authorization")
                     required_org_id = req_to_org_id(request)
-                    user_and_org = validate_access_token_and_get_user_with_org_by_permission(
-                        authorization_header, required_org_id, permission)
+                    user_and_org = (
+                        validate_access_token_and_get_user_with_org_by_permission(
+                            authorization_header, required_org_id, permission
+                        )
+                    )
 
                     _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = user_and_org.org_member_info
+                    _request_ctx_stack.top.propelauth_current_org = (
+                        user_and_org.org_member_info
+                    )
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
@@ -146,20 +174,28 @@ def _require_org_member_with_permission_decorator(validate_access_token_and_get_
     return decorator_that_takes_arguments
 
 
-def _require_org_member_with_all_permissions_decorator(validate_access_token_and_get_user_with_org_by_all_permissions,
-                                                       debug_mode):
-    def decorator_that_takes_arguments(permissions, req_to_org_id=_default_req_to_org_id):
+def _require_org_member_with_all_permissions_decorator(
+    validate_access_token_and_get_user_with_org_by_all_permissions, debug_mode
+):
+    def decorator_that_takes_arguments(
+        permissions, req_to_org_id=_default_req_to_org_id
+    ):
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 try:
                     authorization_header = request.headers.get("Authorization")
                     required_org_id = req_to_org_id(request)
-                    user_and_org = validate_access_token_and_get_user_with_org_by_all_permissions(
-                        authorization_header, required_org_id, permissions)
+                    user_and_org = (
+                        validate_access_token_and_get_user_with_org_by_all_permissions(
+                            authorization_header, required_org_id, permissions
+                        )
+                    )
 
                     _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = user_and_org.org_member_info
+                    _request_ctx_stack.top.propelauth_current_org = (
+                        user_and_org.org_member_info
+                    )
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
@@ -191,4 +227,4 @@ def _return_exception(e, status, debug_mode):
 
 
 def _default_req_to_org_id(req):
-    return req.view_args.get('org_id')
+    return req.view_args.get("org_id")
