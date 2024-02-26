@@ -1,6 +1,6 @@
 import functools
 
-from flask import _request_ctx_stack, request, abort, Response
+from flask import g, request, abort, Response
 from propelauth_py import UnauthorizedException
 from propelauth_py.errors import ForbiddenException
 
@@ -17,10 +17,10 @@ def _get_user_credential_decorator(
                 authorization_header = request.headers.get("Authorization")
                 user = validate_access_token_and_get_user(authorization_header)
 
-                _request_ctx_stack.top.propelauth_current_user = LoggedInUser(user)
+                g.propelauth_current_user = LoggedInUser(user)
 
             except UnauthorizedException as e:
-                _request_ctx_stack.top.propelauth_current_user = LoggedOutUser()
+                g.propelauth_current_user = LoggedOutUser()
                 _return_401_if_user_required(e, require_user, debug_mode)
 
             return func(*args, **kwargs)
@@ -42,10 +42,8 @@ def _get_require_org_decorator(validate_access_token_and_get_user_with_org, debu
                         authorization_header, required_org_id
                     )
 
-                    _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = (
-                        user_and_org.org_member_info
-                    )
+                    g.propelauth_current_user = user_and_org.user
+                    g.propelauth_current_org = user_and_org.org_member_info
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
@@ -80,10 +78,8 @@ def _require_org_member_with_minimum_role_decorator(
                         )
                     )
 
-                    _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = (
-                        user_and_org.org_member_info
-                    )
+                    g.propelauth_current_user = user_and_org.user
+                    g.propelauth_current_org = user_and_org.org_member_info
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
@@ -116,10 +112,8 @@ def _require_org_member_with_exact_role_decorator(
                         )
                     )
 
-                    _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = (
-                        user_and_org.org_member_info
-                    )
+                    g.propelauth_current_user = user_and_org.user
+                    g.propelauth_current_org = user_and_org.org_member_info
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
@@ -154,10 +148,8 @@ def _require_org_member_with_permission_decorator(
                         )
                     )
 
-                    _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = (
-                        user_and_org.org_member_info
-                    )
+                    g.propelauth_current_user = user_and_org.user
+                    g.propelauth_current_org = user_and_org.org_member_info
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
@@ -192,10 +184,8 @@ def _require_org_member_with_all_permissions_decorator(
                         )
                     )
 
-                    _request_ctx_stack.top.propelauth_current_user = user_and_org.user
-                    _request_ctx_stack.top.propelauth_current_org = (
-                        user_and_org.org_member_info
-                    )
+                    g.propelauth_current_user = user_and_org.user
+                    g.propelauth_current_org = user_and_org.org_member_info
 
                 except UnauthorizedException as e:
                     _return_401_if_user_required(e, True, debug_mode)
