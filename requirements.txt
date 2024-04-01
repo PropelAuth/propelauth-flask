@@ -1,4 +1,4 @@
-flask<3
+flask<4
 propelauth-py
 pytest
 requests-mock

@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from flask import _request_ctx_stack
+from flask import g
 from propelauth_py import TokenVerificationMetadata, init_base_auth
 from werkzeug.local import LocalProxy
 
@@ -14,14 +14,10 @@ from propelauth_flask.auth_decorator import (
 )
 
 """Returns the current user. Must be used with one of require_user, optional_user, or require_org_member"""
-current_user = LocalProxy(
-    lambda: getattr(_request_ctx_stack.top, "propelauth_current_user", None)
-)
+current_user = LocalProxy(lambda: g.propelauth_current_user)
 
 """Returns the current org. Must be used with require_org_member"""
-current_org = LocalProxy(
-    lambda: getattr(_request_ctx_stack.top, "propelauth_current_org", None)
-)
+current_org = LocalProxy(lambda: g.propelauth_current_org)
 
 Auth = namedtuple(
     "Auth",
