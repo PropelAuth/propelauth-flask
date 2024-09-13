@@ -71,6 +71,7 @@ Auth = namedtuple(
         "change_user_role_in_org",
         "clear_user_password",
         "delete_org",
+        "revoke_pending_org_invite",
         "invite_user_to_org",
         "remove_user_from_org",
         "fetch_custom_role_mappings",
@@ -163,4 +164,5 @@ def init_auth(
         resend_email_confirmation=auth.resend_email_confirmation,
         fetch_pending_invites=auth.fetch_pending_invites,
         logout_all_user_sessions=auth.logout_all_user_sessions,
+        revoke_pending_org_invite=auth.revoke_pending_org_invite,
     )
