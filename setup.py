@@ -1,6 +1,7 @@
-from setuptools import find_packages, setup
 import pathlib
 import sys
+
+from setuptools import find_packages, setup
 
 HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
@@ -11,7 +12,7 @@ pytest_runner = ["pytest-runner"] if needs_pytest else []
 
 setup(
     name="propelauth-flask",
-    version="2.1.18",
+    version="2.1.19",
     description="A library for managing authentication in Flask",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -20,7 +21,7 @@ setup(
     author="PropelAuth",
     author_email="support@propelauth.com",
     license="MIT",
-    install_requires=["flask<4", "propelauth-py==3.1.18", "requests"],
+    install_requires=["flask<4", "propelauth-py==3.1.19", "requests"],
     setup_requires=pytest_runner,
     tests_require=["pytest==4.4.1"],
     test_suite="tests",
