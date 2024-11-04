@@ -17,7 +17,7 @@ def _get_user_credential_decorator(
                 authorization_header = request.headers.get("Authorization")
                 user = validate_access_token_and_get_user(authorization_header)
 
-                g.propelauth_current_user = LoggedInUser(user)
+                g.propelauth_current_user = LoggedInUser(user=user, user_id=user.user_id, org_id_to_org_member_info=user.org_id_to_org_member_info, legacy_user_id=user.legacy_user_id)
 
             except UnauthorizedException as e:
                 g.propelauth_current_user = LoggedOutUser()
