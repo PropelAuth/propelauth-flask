@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from propelauth_py.user import User
 from propelauth_py.types.user import OrgIdToOrgMemberInfo
 from dataclasses import dataclass
@@ -60,7 +60,7 @@ class LoggedInUser:
         """Returns true if the user has the permission in the org."""
         return self.user.has_permission_in_org(org_id, permission)
 
-    def has_all_permissions_in_org(self, org_id: str, permissions: list [str]) -> bool:
+    def has_all_permissions_in_org(self, org_id: str, permissions: List[str]) -> bool:
         """Returns true if the user has all the permissions in the org."""
         return self.user.has_all_permissions_in_org(org_id, permissions)
 
