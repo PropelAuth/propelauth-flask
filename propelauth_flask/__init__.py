@@ -1,3 +1,4 @@
+import httpx
 from typing import Any, Dict, List, Optional, cast
 from flask import g
 from propelauth_py import (
@@ -515,6 +516,7 @@ class FlaskAuthAsync(FlaskAuth):
         integration_api_key: str, 
         token_verification_metadata: Optional[TokenVerificationMetadata], 
         debug_mode: bool,
+        httpx_client: Optional[httpx.AsyncClient] = None,
     ):
         super().__init__(
             auth_url = auth_url, 
@@ -523,7 +525,21 @@ class FlaskAuthAsync(FlaskAuth):
             debug_mode = debug_mode
         )
         
-        self.auth = init_base_async_auth(auth_url, integration_api_key, token_verification_metadata)
+        self.is_httpx_client_provided = httpx_client is not None
+        if httpx_client:
+            self.httpx_client = httpx_client
+        else:
+            self.httpx_client = httpx.AsyncClient()
+            self.is_httpx_client_provided = False
+        
+        self.auth = init_base_async_auth(auth_url, integration_api_key, token_verification_metadata, self.httpx_client)
+        
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None):
+        if not self.is_httpx_client_provided:
+            await self.httpx_client.aclose()
         
     async def fetch_user_metadata_by_user_id(self, user_id: str, include_orgs: bool = False):
         return await self.auth.fetch_user_metadata_by_user_id(user_id, include_orgs)
@@ -833,6 +849,7 @@ def init_auth_async(
     api_key: str,
     token_verification_metadata: Optional[TokenVerificationMetadata] = None,
     debug_mode=False,
+    httpx_client: Optional[httpx.AsyncClient] = None,
 ) -> FlaskAuthAsync:
     """Fetches metadata required to validate access tokens and returns auth decorators and utilities"""
-    return FlaskAuthAsync(auth_url=auth_url, integration_api_key=api_key, token_verification_metadata=token_verification_metadata, debug_mode=debug_mode)
+    return FlaskAuthAsync(auth_url=auth_url, integration_api_key=api_key, token_verification_metadata=token_verification_metadata, debug_mode=debug_mode, httpx_client=httpx_client)
