@@ -509,7 +509,7 @@ class FlaskAuth:
         return self.auth.verify_step_up_grant(action_type, user_id, grant)
 
 
-class FlaskAuthAsync(FlaskAuth):
+class FlaskAuthAsync():
     def __init__(
         self, 
         auth_url: str, 
@@ -518,28 +518,63 @@ class FlaskAuthAsync(FlaskAuth):
         debug_mode: bool,
         httpx_client: Optional[httpx.AsyncClient] = None,
     ):
-        super().__init__(
-            auth_url = auth_url, 
-            integration_api_key = integration_api_key,
-            token_verification_metadata = token_verification_metadata,
-            debug_mode = debug_mode
-        )
-        
-        self.is_httpx_client_provided = httpx_client is not None
-        if httpx_client:
-            self.httpx_client = httpx_client
-        else:
-            self.httpx_client = httpx.AsyncClient()
-            self.is_httpx_client_provided = False
-        
+        self.auth_url = auth_url
+        self.integration_api_key = integration_api_key
+        self.token_verification_metadata = token_verification_metadata
+        self.debug_mode = debug_mode
+        self.httpx_client = httpx_client
         self.auth = init_base_async_auth(auth_url, integration_api_key, token_verification_metadata, self.httpx_client)
         
-    async def __aenter__(self):
-        return self
+    @property
+    def require_user(self):
+        return _get_user_credential_decorator(
+            self.auth.validate_access_token_and_get_user, True, self.debug_mode
+        )
 
-    async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None):
-        if not self.is_httpx_client_provided:
-            await self.httpx_client.aclose()
+    @property
+    def optional_user(self):
+        return _get_user_credential_decorator(
+            self.auth.validate_access_token_and_get_user, False, self.debug_mode
+        )
+
+    @property
+    def require_org_member(self):
+        return _get_require_org_decorator(
+            self.auth.validate_access_token_and_get_user_with_org, self.debug_mode
+        )
+
+    @property
+    def require_org_member_with_minimum_role(self):
+        return _require_org_member_with_minimum_role_decorator(
+            self.auth.validate_access_token_and_get_user_with_org_by_minimum_role,
+            self.debug_mode,
+        )
+
+    @property
+    def require_org_member_with_exact_role(self):
+        return _require_org_member_with_exact_role_decorator(
+            self.auth.validate_access_token_and_get_user_with_org_by_exact_role,
+            self.debug_mode,
+        )
+
+    @property
+    def require_org_member_with_permission(self):
+        return _require_org_member_with_permission_decorator(
+            self.auth.validate_access_token_and_get_user_with_org_by_permission,
+            self.debug_mode,
+        )
+
+    @property
+    def require_org_member_with_all_permissions(self):
+        return _require_org_member_with_all_permissions_decorator(
+            self.auth.validate_access_token_and_get_user_with_org_by_all_permissions,
+            self.debug_mode,
+        )
+        
+    def validate_access_token_and_get_user(self, authorization_header: str) -> User:
+        return self.auth.validate_access_token_and_get_user(
+            authorization_header=authorization_header
+        )
         
     async def fetch_user_metadata_by_user_id(self, user_id: str, include_orgs: bool = False):
         return await self.auth.fetch_user_metadata_by_user_id(user_id, include_orgs)
