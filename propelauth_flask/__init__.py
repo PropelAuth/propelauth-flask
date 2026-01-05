@@ -163,6 +163,7 @@ class FlaskAuth:
         email_or_username: Optional[str] = None,
         include_orgs: bool = False,
         legacy_user_id: Optional[str] = None,
+        isolated_org_id: Optional[str] = None
     ):
         return self.auth.fetch_users_by_query(
             page_size,
@@ -171,6 +172,7 @@ class FlaskAuth:
             email_or_username,
             include_orgs,
             legacy_user_id,
+            isolated_org_id
         )
 
     def fetch_users_in_org(
@@ -687,9 +689,9 @@ class FlaskAuthAsync():
 
     async def fetch_users_by_query(
         self, page_size: int = 10, page_number: int = 0, order_by: UserQueryOrderBy = UserQueryOrderBy.CREATED_AT_ASC,
-        email_or_username: Optional[str] = None, include_orgs: bool = False, legacy_user_id: Optional[str] = None
+        email_or_username: Optional[str] = None, include_orgs: bool = False, legacy_user_id: Optional[str] = None, isolated_org_id: Optional[str] = None
     ):
-        return await self.auth.fetch_users_by_query(page_size, page_number, order_by, email_or_username, include_orgs, legacy_user_id)
+        return await self.auth.fetch_users_by_query(page_size, page_number, order_by, email_or_username, include_orgs, legacy_user_id, isolated_org_id)
 
     async def fetch_users_in_org(
         self, org_id: str, page_size: int = 10, page_number: int = 0, include_orgs: bool = False, role: Optional[str] = None
