@@ -1,21 +1,24 @@
-import httpx
 from datetime import date
 from typing import Any, Dict, List, Optional, cast
+
+import httpx
 from flask import g
 from propelauth_py import (
-    TokenVerificationMetadata,
-    configure_logging,
-    init_base_auth,
-    init_base_async_auth,
     SamlIdpMetadata,
+    SetOidcIdpMetadataRequest,
+    SocialLoginTokenProvider,
     StepUpMfaGrantType,
     StepUpMfaVerifyTotpResponse,
+    TokenVerificationMetadata,
+    configure_logging,
+    init_base_async_auth,
+    init_base_auth,
 )
-from propelauth_py.user import User, OrgMemberInfo
 from propelauth_py.api import (
     OrgQueryOrderBy,
     UserQueryOrderBy,
 )
+from propelauth_py.user import OrgMemberInfo, User
 from propelauth_py.types.user_insights import (
     ChartMetric,
     ChartMetricCadence,
@@ -32,13 +35,14 @@ from propelauth_py.types.user_insights import (
     UserReportType,
 )
 from werkzeug.local import LocalProxy
+
 from propelauth_flask.auth_decorator import (
-    _get_user_credential_decorator,
     _get_require_org_decorator,
-    _require_org_member_with_minimum_role_decorator,
-    _require_org_member_with_exact_role_decorator,
-    _require_org_member_with_permission_decorator,
+    _get_user_credential_decorator,
     _require_org_member_with_all_permissions_decorator,
+    _require_org_member_with_exact_role_decorator,
+    _require_org_member_with_minimum_role_decorator,
+    _require_org_member_with_permission_decorator,
 )
 from propelauth_flask.user import LoggedInUser, LoggedOutUser
 
@@ -288,10 +292,17 @@ class FlaskAuth:
         expires_in_hours: Optional[int] = None,
         create_new_user_if_one_doesnt_exist: Optional[bool] = None,
         user_signup_query_parameters: Optional[Dict[str, Any]] = None,
-        expire_after_first_use: Optional[bool] = None
+        expire_after_first_use: Optional[bool] = None,
+        requires_interstitial: Optional[bool] = None,
     ):
         return self.auth.create_magic_link(
-            email, redirect_to_url, expires_in_hours, create_new_user_if_one_doesnt_exist, user_signup_query_parameters, expire_after_first_use
+            email,
+            redirect_to_url,
+            expires_in_hours,
+            create_new_user_if_one_doesnt_exist,
+            user_signup_query_parameters,
+            expire_after_first_use,
+            requires_interstitial,
         )
 
     def create_access_token(
@@ -373,6 +384,9 @@ class FlaskAuth:
         domain: Optional[str] = None,
         require_2fa_by: Optional[str] = None,
         extra_domains: Optional[List[str]] = None,
+        password_rotation_enabled: Optional[bool] = None,
+        password_rotation_history_size: Optional[int] = None,
+        password_rotation_period: Optional[int] = None,
     ):
         return self.auth.update_org_metadata(
             org_id,
@@ -385,6 +399,9 @@ class FlaskAuth:
             domain,
             require_2fa_by,
             extra_domains,
+            password_rotation_enabled,
+            password_rotation_history_size,
+            password_rotation_period,
         )
 
     def subscribe_org_to_role_mapping(self, org_id: str, custom_role_mapping_name: str):
@@ -470,11 +487,22 @@ class FlaskAuth:
         user_id: Optional[str] = None,
         expires_at_seconds: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        display_name: Optional[str] = None,
     ):
-        return self.auth.create_api_key(org_id, user_id, expires_at_seconds, metadata)
+        return self.auth.create_api_key(
+            org_id, user_id, expires_at_seconds, metadata, display_name
+        )
 
-    def update_api_key(self, api_key_id: str, expires_at_seconds: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None, set_to_never_expire: Optional[bool] = None):
-        return self.auth.update_api_key(api_key_id, expires_at_seconds, metadata, set_to_never_expire)
+    def update_api_key(
+        self,
+        api_key_id: str,
+        expires_at_seconds: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        set_to_never_expire: Optional[bool] = None,
+    ):
+        return self.auth.update_api_key(
+            api_key_id, expires_at_seconds, metadata, set_to_never_expire
+        )
 
     def delete_api_key(self, api_key_id: str):
         return self.auth.delete_api_key(api_key_id)
@@ -496,6 +524,9 @@ class FlaskAuth:
             org_id=org_id, saml_idp_metadata=saml_idp_metadata
         )
 
+    def set_oidc_idp_metadata(self, request: SetOidcIdpMetadataRequest):
+        return self.auth.set_oidc_idp_metadata(request)
+
     def saml_go_live(self, org_id: str):
         return self.auth.saml_go_live(org_id)
 
@@ -516,7 +547,7 @@ class FlaskAuth:
 
     def verify_step_up_grant(self, action_type: str, user_id: str, grant: str) -> bool:
         return self.auth.verify_step_up_grant(action_type, user_id, grant)
-    
+
     def fetch_user_mfa_methods(self, user_id: str):
         return self.auth.fetch_user_mfa_methods(user_id)
 
@@ -534,15 +565,13 @@ class FlaskAuth:
         return self.auth.validate_imported_api_key(api_key_token)
 
     def fetch_api_key_usage(
-        self, 
-        date: str, 
-        org_id: Optional[str] = None, 
-        user_id: Optional[str] = None, 
-        api_key_id: Optional[str] = None
+        self,
+        date: str,
+        org_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        api_key_id: Optional[str] = None,
     ):
-        return self.auth.fetch_api_key_usage(
-            date, org_id, user_id, api_key_id
-        )
+        return self.auth.fetch_api_key_usage(date, org_id, user_id, api_key_id)
 
     def import_api_key(
         self,
@@ -551,6 +580,7 @@ class FlaskAuth:
         user_id: Optional[str] = None,
         expires_at_seconds: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        display_name: Optional[str] = None,
     ):
         return self.auth.import_api_key(
             api_key_token,
@@ -558,10 +588,11 @@ class FlaskAuth:
             user_id,
             expires_at_seconds,
             metadata,
+            display_name,
         )
 
     def send_sms_mfa_code(
-        self, 
+        self,
         action_type: str,
         user_id: str,
         mfa_phone_id: str,
@@ -569,15 +600,11 @@ class FlaskAuth:
         valid_for_seconds: int,
     ):
         return self.auth.send_sms_mfa_code(
-            action_type,
-            user_id,
-            mfa_phone_id,
-            grant_type,
-            valid_for_seconds
+            action_type, user_id, mfa_phone_id, grant_type, valid_for_seconds
         )
 
     def verify_sms_challenge(
-        self, 
+        self,
         challenge_id: str,
         user_id: str,
         code: str,
@@ -717,13 +744,39 @@ class FlaskAuth:
     def fetch_employee_by_id(self, employee_id: str):
         return self.auth.fetch_employee_by_id(employee_id)
 
+    def fetch_org_scim_groups(
+        self,
+        org_id: str,
+        user_id: Optional[str] = None,
+        page_size: int = 10,
+        page_number: int = 0,
+    ):
+        return self.auth.fetch_org_scim_groups(org_id, user_id, page_size, page_number)
 
-class FlaskAuthAsync():
+    def fetch_scim_group(
+        self,
+        org_id: str,
+        group_id: str,
+        members_page_size: int = 10,
+        members_page_number: int = 0,
+    ):
+        return self.auth.fetch_scim_group(org_id=org_id, group_id=group_id, members_page_size=members_page_size, members_page_number=members_page_number)
+
+    def fetch_user_oauth_tokens(self, user_id: str):
+        return self.auth.fetch_user_oauth_tokens(user_id)
+
+    def fetch_fresh_token_from_provider(
+        self, user_id: str, provider: SocialLoginTokenProvider
+    ):
+        return self.auth.fetch_fresh_token_from_provider(user_id, provider)
+
+
+class FlaskAuthAsync:
     def __init__(
-        self, 
-        auth_url: str, 
-        integration_api_key: str, 
-        token_verification_metadata: Optional[TokenVerificationMetadata], 
+        self,
+        auth_url: str,
+        integration_api_key: str,
+        token_verification_metadata: Optional[TokenVerificationMetadata],
         debug_mode: bool,
         httpx_client: Optional[httpx.AsyncClient] = None,
     ):
@@ -732,8 +785,13 @@ class FlaskAuthAsync():
         self.token_verification_metadata = token_verification_metadata
         self.debug_mode = debug_mode
         self.httpx_client = httpx_client
-        self.auth = init_base_async_auth(auth_url, integration_api_key, token_verification_metadata, self.httpx_client)
-        
+        self.auth = init_base_async_auth(
+            auth_url,
+            integration_api_key,
+            token_verification_metadata,
+            self.httpx_client,
+        )
+
     @property
     def require_user(self):
         return _get_user_credential_decorator(
@@ -779,70 +837,132 @@ class FlaskAuthAsync():
             self.auth.validate_access_token_and_get_user_with_org_by_all_permissions,
             self.debug_mode,
         )
-        
+
     def validate_access_token_and_get_user(self, authorization_header: str) -> User:
         return self.auth.validate_access_token_and_get_user(
             authorization_header=authorization_header
         )
-        
-    async def fetch_user_metadata_by_user_id(self, user_id: str, include_orgs: bool = False):
+
+    async def fetch_user_metadata_by_user_id(
+        self, user_id: str, include_orgs: bool = False
+    ):
         return await self.auth.fetch_user_metadata_by_user_id(user_id, include_orgs)
-    
-    async def fetch_user_metadata_by_email(self, email: str, include_orgs: bool = False):
+
+    async def fetch_user_metadata_by_email(
+        self, email: str, include_orgs: bool = False
+    ):
         return await self.auth.fetch_user_metadata_by_email(email, include_orgs)
 
-    async def fetch_user_metadata_by_username(self, username: str, include_orgs: bool = False):
+    async def fetch_user_metadata_by_username(
+        self, username: str, include_orgs: bool = False
+    ):
         return await self.auth.fetch_user_metadata_by_username(username, include_orgs)
 
     async def fetch_user_signup_query_params_by_user_id(self, user_id: str):
         return await self.auth.fetch_user_signup_query_params_by_user_id(user_id)
 
-    async def fetch_batch_user_metadata_by_user_ids(self, user_ids: List[str], include_orgs: bool = False):
-        return await self.auth.fetch_batch_user_metadata_by_user_ids(user_ids, include_orgs)
+    async def fetch_batch_user_metadata_by_user_ids(
+        self, user_ids: List[str], include_orgs: bool = False
+    ):
+        return await self.auth.fetch_batch_user_metadata_by_user_ids(
+            user_ids, include_orgs
+        )
 
-    async def fetch_batch_user_metadata_by_emails(self, emails: List[str], include_orgs: bool = False):
+    async def fetch_batch_user_metadata_by_emails(
+        self, emails: List[str], include_orgs: bool = False
+    ):
         return await self.auth.fetch_batch_user_metadata_by_emails(emails, include_orgs)
 
-    async def fetch_batch_user_metadata_by_usernames(self, usernames: List[str], include_orgs: bool = False):
-        return await self.auth.fetch_batch_user_metadata_by_usernames(usernames, include_orgs)
+    async def fetch_batch_user_metadata_by_usernames(
+        self, usernames: List[str], include_orgs: bool = False
+    ):
+        return await self.auth.fetch_batch_user_metadata_by_usernames(
+            usernames, include_orgs
+        )
 
     async def fetch_org(self, org_id: str):
         return await self.auth.fetch_org(org_id)
 
     async def fetch_org_by_query(
-        self, page_size: int = 10, page_number: int = 0, order_by: OrgQueryOrderBy = OrgQueryOrderBy.CREATED_AT_ASC, 
-        name: Optional[str] = None, legacy_org_id: Optional[str] = None, domain: Optional[str] = None
+        self,
+        page_size: int = 10,
+        page_number: int = 0,
+        order_by: OrgQueryOrderBy = OrgQueryOrderBy.CREATED_AT_ASC,
+        name: Optional[str] = None,
+        legacy_org_id: Optional[str] = None,
+        domain: Optional[str] = None,
     ):
-        return await self.auth.fetch_org_by_query(page_size, page_number, order_by, name, legacy_org_id, domain)
+        return await self.auth.fetch_org_by_query(
+            page_size, page_number, order_by, name, legacy_org_id, domain
+        )
 
     async def fetch_custom_role_mappings(self):
         return await self.auth.fetch_custom_role_mappings()
 
-    async def fetch_pending_invites(self, page_number: int = 0, page_size: int = 10, org_id: Optional[str] = None):
+    async def fetch_pending_invites(
+        self, page_number: int = 0, page_size: int = 10, org_id: Optional[str] = None
+    ):
         return await self.auth.fetch_pending_invites(page_number, page_size, org_id)
 
     async def fetch_users_by_query(
-        self, page_size: int = 10, page_number: int = 0, order_by: UserQueryOrderBy = UserQueryOrderBy.CREATED_AT_ASC,
-        email_or_username: Optional[str] = None, include_orgs: bool = False, legacy_user_id: Optional[str] = None
+        self,
+        page_size: int = 10,
+        page_number: int = 0,
+        order_by: UserQueryOrderBy = UserQueryOrderBy.CREATED_AT_ASC,
+        email_or_username: Optional[str] = None,
+        include_orgs: bool = False,
+        legacy_user_id: Optional[str] = None,
     ):
-        return await self.auth.fetch_users_by_query(page_size, page_number, order_by, email_or_username, include_orgs, legacy_user_id)
-
-    async def fetch_users_in_org(
-        self, org_id: str, page_size: int = 10, page_number: int = 0, include_orgs: bool = False, role: Optional[str] = None
-    ):
-        return await self.auth.fetch_users_in_org(org_id, page_size, page_number, include_orgs, role)
-
-    async def create_user(
-        self, email: str, email_confirmed: bool = False, send_email_to_confirm_email_address: bool = True,
-        ask_user_to_update_password_on_login: bool = False, password: Optional[str] = None, username: Optional[str] = None,
-        first_name: Optional[str] = None, last_name: Optional[str] = None, properties: Optional[Dict[str, Any]] = None, ignore_domain_restrictions: bool = False
-    ):
-        return await self.auth.create_user(
-            email, email_confirmed, send_email_to_confirm_email_address, ask_user_to_update_password_on_login,
-            password, username, first_name, last_name, properties, ignore_domain_restrictions
+        return await self.auth.fetch_users_by_query(
+            page_size,
+            page_number,
+            order_by,
+            email_or_username,
+            include_orgs,
+            legacy_user_id,
         )
 
-    async def invite_user_to_org(self, email: str, org_id: str, role: str, additional_roles: List[str] = []):
+    async def fetch_users_in_org(
+        self,
+        org_id: str,
+        page_size: int = 10,
+        page_number: int = 0,
+        include_orgs: bool = False,
+        role: Optional[str] = None,
+    ):
+        return await self.auth.fetch_users_in_org(
+            org_id, page_size, page_number, include_orgs, role
+        )
+
+    async def create_user(
+        self,
+        email: str,
+        email_confirmed: bool = False,
+        send_email_to_confirm_email_address: bool = True,
+        ask_user_to_update_password_on_login: bool = False,
+        password: Optional[str] = None,
+        username: Optional[str] = None,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        properties: Optional[Dict[str, Any]] = None,
+        ignore_domain_restrictions: bool = False,
+    ):
+        return await self.auth.create_user(
+            email,
+            email_confirmed,
+            send_email_to_confirm_email_address,
+            ask_user_to_update_password_on_login,
+            password,
+            username,
+            first_name,
+            last_name,
+            properties,
+            ignore_domain_restrictions,
+        )
+
+    async def invite_user_to_org(
+        self, email: str, org_id: str, role: str, additional_roles: List[str] = []
+    ):
         return await self.auth.invite_user_to_org(email, org_id, role, additional_roles)
 
     async def resend_email_confirmation(self, user_id: str):
@@ -851,9 +971,13 @@ class FlaskAuthAsync():
     async def logout_all_user_sessions(self, user_id: str):
         return await self.auth.logout_all_user_sessions(user_id)
 
-    async def update_user_email(self, user_id: str, new_email: str, require_email_confirmation: bool):
-        return await self.auth.update_user_email(user_id, new_email, require_email_confirmation)
-    
+    async def update_user_email(
+        self, user_id: str, new_email: str, require_email_confirmation: bool
+    ):
+        return await self.auth.update_user_email(
+            user_id, new_email, require_email_confirmation
+        )
+
     async def update_user_metadata(
         self,
         user_id: str,
@@ -867,14 +991,29 @@ class FlaskAuthAsync():
         legacy_user_id: Optional[str] = None,
     ):
         return await self.auth.update_user_metadata(
-            user_id, username, first_name, last_name, metadata, properties, picture_url, update_password_required, legacy_user_id
+            user_id,
+            username,
+            first_name,
+            last_name,
+            metadata,
+            properties,
+            picture_url,
+            update_password_required,
+            legacy_user_id,
         )
 
     async def clear_user_password(self, user_id: str):
         return await self.auth.clear_user_password(user_id)
 
-    async def update_user_password(self, user_id: str, password: str, ask_user_to_update_password_on_login: bool = False):
-        return await self.auth.update_user_password(user_id, password, ask_user_to_update_password_on_login)
+    async def update_user_password(
+        self,
+        user_id: str,
+        password: str,
+        ask_user_to_update_password_on_login: bool = False,
+    ):
+        return await self.auth.update_user_password(
+            user_id, password, ask_user_to_update_password_on_login
+        )
 
     async def create_magic_link(
         self,
@@ -883,14 +1022,28 @@ class FlaskAuthAsync():
         expires_in_hours: Optional[int] = None,
         create_new_user_if_one_doesnt_exist: Optional[bool] = None,
         user_signup_query_parameters: Optional[Dict[str, Any]] = None,
-        expire_after_first_use: Optional[bool] = None
+        expire_after_first_use: Optional[bool] = None,
+        requires_interstitial: Optional[bool] = None,
     ):
         return await self.auth.create_magic_link(
-            email, redirect_to_url, expires_in_hours, create_new_user_if_one_doesnt_exist, user_signup_query_parameters, expire_after_first_use
+            email,
+            redirect_to_url,
+            expires_in_hours,
+            create_new_user_if_one_doesnt_exist,
+            user_signup_query_parameters,
+            expire_after_first_use,
+            requires_interstitial,
         )
 
-    async def create_access_token(self, user_id: str, duration_in_minutes: int, active_org_id: Optional[str] = None):
-        return await self.auth.create_access_token(user_id, duration_in_minutes, active_org_id)
+    async def create_access_token(
+        self,
+        user_id: str,
+        duration_in_minutes: int,
+        active_org_id: Optional[str] = None,
+    ):
+        return await self.auth.create_access_token(
+            user_id, duration_in_minutes, active_org_id
+        )
 
     async def migrate_user_from_external_source(
         self,
@@ -908,11 +1061,20 @@ class FlaskAuthAsync():
         properties: Optional[Dict[str, Any]] = None,
     ):
         return await self.auth.migrate_user_from_external_source(
-            email, email_confirmed, existing_user_id, existing_password_hash,
-            existing_mfa_base32_encoded_secret, ask_user_to_update_password_on_login,
-            enabled, first_name, last_name, username, picture_url, properties
+            email,
+            email_confirmed,
+            existing_user_id,
+            existing_password_hash,
+            existing_mfa_base32_encoded_secret,
+            ask_user_to_update_password_on_login,
+            enabled,
+            first_name,
+            last_name,
+            username,
+            picture_url,
+            properties,
         )
-        
+
     async def migrate_user_password(
         self,
         user_id: str,
@@ -931,8 +1093,13 @@ class FlaskAuthAsync():
         legacy_org_id: Optional[str] = None,
     ):
         return await self.auth.create_org(
-            name, enable_auto_joining_by_domain, members_must_have_matching_domain,
-            domain, max_users, custom_role_mapping_name, legacy_org_id
+            name,
+            enable_auto_joining_by_domain,
+            members_must_have_matching_domain,
+            domain,
+            max_users,
+            custom_role_mapping_name,
+            legacy_org_id,
         )
 
     async def update_org_metadata(
@@ -947,14 +1114,32 @@ class FlaskAuthAsync():
         domain: Optional[str] = None,
         require_2fa_by: Optional[str] = None,
         extra_domains: Optional[List[str]] = None,
+        password_rotation_enabled: Optional[bool] = None,
+        password_rotation_history_size: Optional[int] = None,
+        password_rotation_period: Optional[int] = None,
     ):
         return await self.auth.update_org_metadata(
-            org_id, name, can_setup_saml, metadata, max_users,
-            can_join_on_email_domain_match, members_must_have_email_domain_match, domain, require_2fa_by, extra_domains
+            org_id,
+            name,
+            can_setup_saml,
+            metadata,
+            max_users,
+            can_join_on_email_domain_match,
+            members_must_have_email_domain_match,
+            domain,
+            require_2fa_by,
+            extra_domains,
+            password_rotation_enabled,
+            password_rotation_history_size,
+            password_rotation_period,
         )
 
-    async def subscribe_org_to_role_mapping(self, org_id: str, custom_role_mapping_name: str):
-        return await self.auth.subscribe_org_to_role_mapping(org_id, custom_role_mapping_name)
+    async def subscribe_org_to_role_mapping(
+        self, org_id: str, custom_role_mapping_name: str
+    ):
+        return await self.auth.subscribe_org_to_role_mapping(
+            org_id, custom_role_mapping_name
+        )
 
     async def delete_org(self, org_id: str):
         return await self.auth.delete_org(org_id)
@@ -962,14 +1147,20 @@ class FlaskAuthAsync():
     async def revoke_pending_org_invite(self, org_id: str, invitee_email: str):
         return await self.auth.revoke_pending_org_invite(org_id, invitee_email)
 
-    async def add_user_to_org(self, user_id: str, org_id: str, role: str, additional_roles: List[str] = []):
+    async def add_user_to_org(
+        self, user_id: str, org_id: str, role: str, additional_roles: List[str] = []
+    ):
         return await self.auth.add_user_to_org(user_id, org_id, role, additional_roles)
 
     async def remove_user_from_org(self, user_id: str, org_id: str):
         return await self.auth.remove_user_from_org(user_id, org_id)
 
-    async def change_user_role_in_org(self, user_id: str, org_id: str, role: str, additional_roles: List[str] = []):
-        return await self.auth.change_user_role_in_org(user_id, org_id, role, additional_roles)
+    async def change_user_role_in_org(
+        self, user_id: str, org_id: str, role: str, additional_roles: List[str] = []
+    ):
+        return await self.auth.change_user_role_in_org(
+            user_id, org_id, role, additional_roles
+        )
 
     async def delete_user(self, user_id: str):
         return await self.auth.delete_user(user_id)
@@ -1029,12 +1220,23 @@ class FlaskAuthAsync():
         org_id: Optional[str] = None,
         user_id: Optional[str] = None,
         expires_at_seconds: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        display_name: Optional[str] = None,
     ):
-        return await self.auth.create_api_key(org_id, user_id, expires_at_seconds, metadata)
+        return await self.auth.create_api_key(
+            org_id, user_id, expires_at_seconds, metadata, display_name
+        )
 
-    async def update_api_key(self, api_key_id: str, expires_at_seconds: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None, set_to_never_expire: Optional[bool] = None):
-        return await self.auth.update_api_key(api_key_id, expires_at_seconds, metadata, set_to_never_expire)
+    async def update_api_key(
+        self,
+        api_key_id: str,
+        expires_at_seconds: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        set_to_never_expire: Optional[bool] = None,
+    ):
+        return await self.auth.update_api_key(
+            api_key_id, expires_at_seconds, metadata, set_to_never_expire
+        )
 
     async def delete_api_key(self, api_key_id: str):
         return await self.auth.delete_api_key(api_key_id)
@@ -1047,16 +1249,23 @@ class FlaskAuthAsync():
 
     async def validate_api_key(self, api_key_token: str):
         return await self.auth.validate_api_key(api_key_token)
-    
+
     async def fetch_saml_sp_metadata(self, org_id: str):
         return await self.auth.fetch_saml_sp_metadata(org_id)
-    
-    async def set_saml_idp_metadata(self, org_id: str, saml_idp_metadata: SamlIdpMetadata):
-        return await self.auth.set_saml_idp_metadata(org_id=org_id, saml_idp_metadata=saml_idp_metadata)
-    
+
+    async def set_saml_idp_metadata(
+        self, org_id: str, saml_idp_metadata: SamlIdpMetadata
+    ):
+        return await self.auth.set_saml_idp_metadata(
+            org_id=org_id, saml_idp_metadata=saml_idp_metadata
+        )
+
+    async def set_oidc_idp_metadata(self, request: SetOidcIdpMetadataRequest):
+        return await self.auth.set_oidc_idp_metadata(request)
+
     async def saml_go_live(self, org_id: str):
         return await self.auth.saml_go_live(org_id)
-    
+
     async def delete_saml_connection(self, org_id: str):
         return await self.auth.delete_saml_connection(org_id)
 
@@ -1072,27 +1281,22 @@ class FlaskAuthAsync():
             action_type, user_id, code, grant_type, valid_for_seconds
         )
 
-    async def verify_step_up_grant(self, action_type: str, user_id: str, grant: str) -> bool:
+    async def verify_step_up_grant(
+        self, action_type: str, user_id: str, grant: str
+    ) -> bool:
         return await self.auth.verify_step_up_grant(action_type, user_id, grant)
-    
+
     async def validate_imported_api_key(self, api_key_token: str):
-        return await self.auth.validate_imported_api_key(
-            api_key_token=api_key_token
-        )
+        return await self.auth.validate_imported_api_key(api_key_token=api_key_token)
 
     async def fetch_api_key_usage(
-        self, 
-        date: str, 
-        org_id: Optional[str] = None, 
-        user_id: Optional[str] = None, 
-        api_key_id: Optional[str] = None
+        self,
+        date: str,
+        org_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        api_key_id: Optional[str] = None,
     ):
-        return await self.auth.fetch_api_key_usage(
-            date, 
-            org_id, 
-            user_id, 
-            api_key_id
-        )
+        return await self.auth.fetch_api_key_usage(date, org_id, user_id, api_key_id)
 
     async def import_api_key(
         self,
@@ -1101,6 +1305,7 @@ class FlaskAuthAsync():
         user_id: Optional[str] = None,
         expires_at_seconds: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        display_name: Optional[str] = None,
     ):
         return await self.auth.import_api_key(
             api_key_token,
@@ -1108,14 +1313,11 @@ class FlaskAuthAsync():
             user_id,
             expires_at_seconds,
             metadata,
+            display_name
         )
 
     async def invite_user_to_org_by_user_id(
-        self, 
-        user_id: str, 
-        org_id: str, 
-        role: str, 
-        additional_roles: List[str] = []
+        self, user_id: str, org_id: str, role: str, additional_roles: List[str] = []
     ):
         return await self.auth.invite_user_to_org_by_user_id(
             user_id,
@@ -1130,7 +1332,7 @@ class FlaskAuthAsync():
         )
 
     async def send_sms_mfa_code(
-        self, 
+        self,
         action_type: str,
         user_id: str,
         mfa_phone_id: str,
@@ -1138,24 +1340,16 @@ class FlaskAuthAsync():
         valid_for_seconds: int,
     ):
         return await self.auth.send_sms_mfa_code(
-            action_type,
-            user_id,
-            mfa_phone_id,
-            grant_type,
-            valid_for_seconds
+            action_type, user_id, mfa_phone_id, grant_type, valid_for_seconds
         )
 
     async def verify_sms_challenge(
-        self, 
+        self,
         challenge_id: str,
         user_id: str,
         code: str,
     ):
-        return await self.auth.verify_sms_challenge(
-            challenge_id,
-            user_id,
-            code
-        )
+        return await self.auth.verify_sms_challenge(challenge_id, user_id, code)
 
 
     # User Insights Reports APIs
@@ -1283,9 +1477,36 @@ class FlaskAuthAsync():
         )
 
     async def fetch_employee_by_id(self, employee_id: str):
-        return await self.auth.fetch_employee_by_id(
-            employee_id
+        return await self.auth.fetch_employee_by_id(employee_id)
+
+    async def fetch_org_scim_groups(
+        self,
+        org_id: str,
+        user_id: Optional[str] = None,
+        page_size: int = 10,
+        page_number: int = 0,
+    ):
+        return await self.auth.fetch_org_scim_groups(
+            org_id, user_id, page_size, page_number
         )
+
+    async def fetch_scim_group(
+        self,
+        org_id: str,
+        group_id: str,
+        members_page_size: int = 10,
+        members_page_number: int = 0,
+    ):
+        return await self.auth.fetch_scim_group(org_id=org_id, group_id=group_id, members_page_size=members_page_size, members_page_number=members_page_number)
+
+    async def fetch_user_oauth_tokens(self, user_id: str):
+        return await self.auth.fetch_user_oauth_tokens(user_id)
+
+    async def fetch_fresh_token_from_provider(
+        self, user_id: str, provider: SocialLoginTokenProvider
+    ):
+        return await self.auth.fetch_fresh_token_from_provider(user_id, provider)
+
 
 def init_auth(
     auth_url: str,
@@ -1304,6 +1525,7 @@ def init_auth(
         debug_mode=debug_mode,
     )
 
+
 def init_auth_async(
     auth_url: str,
     api_key: str,
@@ -1315,4 +1537,10 @@ def init_auth_async(
     configure_logging(log_exceptions=log_exceptions)
 
     """Fetches metadata required to validate access tokens and returns auth decorators and utilities"""
-    return FlaskAuthAsync(auth_url=auth_url, integration_api_key=api_key, token_verification_metadata=token_verification_metadata, debug_mode=debug_mode, httpx_client=httpx_client)
+    return FlaskAuthAsync(
+        auth_url=auth_url,
+        integration_api_key=api_key,
+        token_verification_metadata=token_verification_metadata,
+        debug_mode=debug_mode,
+        httpx_client=httpx_client,
+    )
