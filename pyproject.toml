@@ -1,13 +1,13 @@
 [project]
 name = "propelauth-flask"
-version = "4.3.2"
+version = "4.4.0"
 description = "A library for managing authentication in Flask"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "PropelAuth", email = "support@propelauth.com" }]
 dependencies = [
-    "propelauth-py==4.3.2",
+    "propelauth-py==4.4.0",
     "requests",
     "httpx>=0.28.1",
     "flask<4",
